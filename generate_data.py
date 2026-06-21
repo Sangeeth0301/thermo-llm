@@ -8,9 +8,9 @@ OUTPUT_DIR = os.path.dirname(os.path.abspath(__file__))
 def generate_dataset():
     data_dir = os.path.join(OUTPUT_DIR, 'data')
     os.makedirs(data_dir, exist_ok=True)
-    csv_path = os.path.join(data_dir, 'd_thermo_synthetic.csv')
+    csv_path = os.path.join(data_dir, 'd_thermo.csv')
 
-    print(f"Generating synthetic telemetry dataset D_thermo...")
+    print(f"Generating telemetry dataset D_thermo...")
     print(f"Target location: {csv_path}")
 
     # Physical parameters
