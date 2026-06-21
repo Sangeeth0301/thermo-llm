@@ -33,6 +33,70 @@ The Thermo-LLM framework is designed as a closed-loop cyber-physical system (CPS
   <sub><b>Fig 3.</b> Thermo-LLM closed-loop neuro-symbolic architecture mapping runtime phases to hardware controls.</sub>
 </p>
 
+### Interactive System Architecture Flow (Mermaid Rendering)
+
+```mermaid
+graph TB
+    subgraph System 1: Cyber-Physical Observation (Telemetry & Forecasting)
+        direction TB
+        LLM[LLM Workload w_k] -->|Triggers hooks| Instrumentation[Phase-Aware Runtime Instrumentation]
+        Instrumentation -->|Binary signal| Phase[Phase Signal &phi;]
+        Instrumentation -->|Read physical sensors| Sensors[Telemetry sensors: Temp T, Power P]
+        
+        Phase -->|Dual loss boundary lock| DigitalTwin[Physics-Informed Digital Twin <br/> PINN Neural-ROM]
+        Sensors -->|Dual loss validation| DigitalTwin
+        
+        Kalman[Kalman Filter Correction] -->|Online R_th, C_th parameter refinement| DigitalTwin
+        DigitalTwin -->|10s Horizon Prediction| Forecast[Multi-Step Thermal Forecast T_hat]
+    end
+
+    subgraph System 2: Safety-Constrained Closed-Loop Control
+        direction TB
+        Forecast -->|Downsampled forecast| State[State Vector s_t]
+        Sensors -->|Current T, P, f| State
+        Phase -->|Binary flag &phi;| State
+        
+        State -->|State Observation| Scheduler[D-DQN Scheduler]
+        Scheduler -->|Proposes action| Candidate[Candidate Frequency f_cand]
+        
+        Candidate -->|Virtual validation query| Shield[Deterministic Safety Shield]
+        DigitalTwin -->|Candidate thermal trajectory| Shield
+        
+        Shield -->|Verify T_hat < T_limit| Condition{T_hat < 43°C?}
+        Condition -->|Yes: Approved| Actuator[Hardware Resource Controller <br/> DVFS Driver]
+        Condition -->|No: Vetoed| Repair[Action Repair: Select Highest Safe Frequency f*]
+        Repair --> Actuator
+    end
+
+    subgraph Offline Calibration Phase
+        direction LR
+        Dataset[Empirical Dataset D_thermo] --> Parameter[RC Parameter Estimation]
+        Parameter --> PINN[PINN Offline Training]
+        PINN -->|Frozen Weights| DigitalTwin
+    end
+
+    classDef sys1 fill:#f0f4f8,stroke:#d0dbe5,stroke-width:2px;
+    classDef sys2 fill:#f5f3f8,stroke:#e6e1ed,stroke-width:2px;
+    classDef offline fill:#fff8f0,stroke:#ffe8d1,stroke-width:2px;
+    classDef block fill:#ffffff,stroke:#2c3e50,stroke-width:1.5px;
+    classDef highlight1 fill:#e0f7fa,stroke:#00acc1,stroke-width:1.5px,color:#006064;
+    classDef highlight2 fill:#f1f8e9,stroke:#7cb342,stroke-width:1.5px,color:#33691E;
+    classDef twin fill:#ffffff,stroke:#e64a19,stroke-width:2px,color:#bf360c;
+    classDef dqn fill:#ffffff,stroke:#7b1fa2,stroke-width:2px,color:#4a148c;
+    classDef shield fill:#ffffff,stroke:#388e3c,stroke-width:2px,color:#1b5e20;
+    
+    class System1 sys1;
+    class System2 sys2;
+    class Offline offline;
+    class LLM,Instrumentation,Sensors,Actuator,State,Candidate,Kalman,Forecast block;
+    class Phase highlight1;
+    class Sensors highlight2;
+    class DigitalTwin twin;
+    class Scheduler dqn;
+    class Shield shield;
+```
+
+
 ### System 1: Cyber-Physical Observation (Runtime & Physics)
 
 System 1 monitors the execution state of the LLM and the thermodynamic state of the silicon to generate a look-ahead thermal forecast:
