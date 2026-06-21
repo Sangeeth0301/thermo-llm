@@ -37,24 +37,24 @@ The Thermo-LLM framework is designed as a closed-loop cyber-physical system (CPS
 
 ```mermaid
 graph TB
-    subgraph System 1: Cyber-Physical Observation (Telemetry & Forecasting)
+    subgraph System1 ["System 1: Cyber-Physical Observation (Telemetry & Forecasting)"]
         direction TB
         LLM[LLM Workload w_k] -->|Triggers hooks| Instrumentation[Phase-Aware Runtime Instrumentation]
-        Instrumentation -->|Binary signal| Phase[Phase Signal &phi;]
+        Instrumentation -->|Binary signal| Phase[Phase Signal φ]
         Instrumentation -->|Read physical sensors| Sensors[Telemetry sensors: Temp T, Power P]
         
         Phase -->|Dual loss boundary lock| DigitalTwin[Physics-Informed Digital Twin <br/> PINN Neural-ROM]
         Sensors -->|Dual loss validation| DigitalTwin
         
         Kalman[Kalman Filter Correction] -->|Online R_th, C_th parameter refinement| DigitalTwin
-        DigitalTwin -->|10s Horizon Prediction| Forecast[Multi-Step Thermal Forecast T_hat]
+        DigitalTwin -->|10s Horizon Prediction| Forecast[Multi-Step Thermal Forecast T̂]
     end
 
-    subgraph System 2: Safety-Constrained Closed-Loop Control
+    subgraph System2 ["System 2: Safety-Constrained Closed-Loop Control"]
         direction TB
         Forecast -->|Downsampled forecast| State[State Vector s_t]
         Sensors -->|Current T, P, f| State
-        Phase -->|Binary flag &phi;| State
+        Phase -->|Binary flag φ| State
         
         State -->|State Observation| Scheduler[D-DQN Scheduler]
         Scheduler -->|Proposes action| Candidate[Candidate Frequency f_cand]
@@ -62,13 +62,13 @@ graph TB
         Candidate -->|Virtual validation query| Shield[Deterministic Safety Shield]
         DigitalTwin -->|Candidate thermal trajectory| Shield
         
-        Shield -->|Verify T_hat < T_limit| Condition{T_hat < 43°C?}
+        Shield -->|Verify T̂ < T_limit| Condition{T̂ < 43°C?}
         Condition -->|Yes: Approved| Actuator[Hardware Resource Controller <br/> DVFS Driver]
         Condition -->|No: Vetoed| Repair[Action Repair: Select Highest Safe Frequency f*]
         Repair --> Actuator
     end
 
-    subgraph Offline Calibration Phase
+    subgraph Offline ["Offline Calibration Phase"]
         direction LR
         Dataset[Empirical Dataset D_thermo] --> Parameter[RC Parameter Estimation]
         Parameter --> PINN[PINN Offline Training]
@@ -95,6 +95,7 @@ graph TB
     class Scheduler dqn;
     class Shield shield;
 ```
+
 
 
 ### System 1: Cyber-Physical Observation (Runtime & Physics)
